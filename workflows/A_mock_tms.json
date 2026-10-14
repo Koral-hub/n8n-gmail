@@ -1,0 +1,137 @@
+{
+  "updatedAt": "2026-10-14T21:20:53.762Z",
+  "createdAt": "2026-10-14T20:55:03.438Z",
+  "id": "p5tCaPGXhRyEIkqP",
+  "name": "Workflow A",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        400,
+        -256
+      ],
+      "id": "6b96f742-e9f3-44e2-8e84-5ff047a8e339",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "path": "tms/shipment",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        -256
+      ],
+      "id": "46bac6ab-2d62-4312-b285-35ed379f2918",
+      "name": "Webhook",
+      "webhookId": "69de5a31-83d8-40af-add5-510d98a3d302"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f82e64fb-e92a-48ac-bee2-ce963b5ae355",
+              "name": "nr",
+              "value": "={{ $json.query.nr }}",
+              "type": "string"
+            },
+            {
+              "id": "84398efe-a29b-4533-9ddc-f834f8ff6175",
+              "name": "status",
+              "value": "={{ ($json.query.nr ?? '').endsWith('7') ? 'opóźniona' : 'w drodze' }}",
+              "type": "string"
+            },
+            {
+              "id": "86be8a3c-6376-44b0-8c01-4d329895db53",
+              "name": "eta",
+              "value": "={{ ($json.query.nr ?? '').endsWith('7') ? $now.plus({days: 3}).toISODate() : $now.plus({days: 1}).toISODate() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        192,
+        -256
+      ],
+      "id": "42e5ee8d-fbf4-4677-9b3f-fedfa45ca3a0",
+      "name": "Edit Fields"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "7df3169c-a5d7-44c3-a923-68c33f3cc9e6",
+  "activeVersionId": "7df3169c-a5d7-44c3-a923-68c33f3cc9e6",
+  "versionCounter": 27,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-14T20:55:03.438Z",
+      "createdAt": "2026-10-14T20:55:03.438Z",
+      "role": "workflow:owner",
+      "workflowId": "p5tCaPGXhRyEIkqP",
+      "projectId": "uB3LdtwnYBt96Juy",
+      "project": {
+        "updatedAt": "2026-10-14T20:35:21.513Z",
+        "createdAt": "2026-10-14T20:32:23.122Z",
+        "id": "uB3LdtwnYBt96Juy",
+        "name": "Karol Wojtas <obsluga@example.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "2994ca79-89c4-4264-bd65-0d2e98f2b35d"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version 7df3169c",
+    "description": ""
+  }
+}

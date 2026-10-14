@@ -1,0 +1,492 @@
+{
+  "updatedAt": "2026-10-14T21:40:41.671Z",
+  "createdAt": "2026-10-14T21:24:11.531Z",
+  "id": "pZd7EmJNMarDhNgg",
+  "name": "Workflow C - obsluga maili",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        128,
+        -16
+      ],
+      "id": "4924d1a5-f418-4386-8f80-43446912af70",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1TyxUszt5BzxeePa",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Od: {{ $json.From }}\nTemat: {{ $json.Subject }}\n\n{{ $json.snippet }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Klasyfikujesz maile przychodzące do działu obsługi klienta firmy logistycznej.\nkategoria: dokładnie jedna z: status_przesylki, reklamacja, phishing_spam, inne.\nJeśli w mailu jest numer przesyłki, ZAWSZE sprawdź jego status narzędziem sprawdz_status_przesylki i użyj wyniku w szkicu odpowiedzi.\npewnosc: liczba 0-1, na ile jesteś pewny kategorii.\nnumer_przesylki: numer z maila albo pusty string.\nszkic_odpowiedzi: uprzejma odpowiedź po polsku; dla phishing_spam pusty string. Nigdy nie wymyślaj statusu przesyłki."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        400,
+        -16
+      ],
+      "id": "f5317f77-e818-45aa-9af9-b1470c5ceb18",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "notesInFlow": false,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"kategoria\": \"status_przesylki\",\n  \"pewnosc\": 0.9,\n  \"numer_przesylki\": \"12347\",\n  \"szkic_odpowiedzi\": \"Dzień dobry, ...\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        192
+      ],
+      "id": "e47ae2a1-604d-4739-a75e-7d40ac945186",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        288
+      ],
+      "id": "8064efb8-7487-4859-af5a-0ba59983df69",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Dl6iDO0SuO5A4Vq3",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://n8n:5678/mcp/tms",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "position": [
+        576,
+        320
+      ],
+      "id": "ab8d7c9f-e7c8-43c4-85cc-d867e53ab2a4",
+      "name": "MCP Client"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Gmail Trigger').item.json.threadId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        448,
+        208
+      ],
+      "id": "96d1ae18-885c-46e9-92c7-819cd11694bd",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "jT8m3sinQqqcU8dB",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dc03b172-a513-4c1e-ad35-9ed9ad44f1e8",
+              "leftValue": "={{ $json.output.pewnosc }}",
+              "rightValue": 0.7,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        752,
+        -16
+      ],
+      "id": "3c8cdd60-b25f-40c2-b88b-92fa734cdf79",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d8db4ceb-6621-446d-95d8-6860ce0f0b3f",
+                    "leftValue": "={{ $json.output.kategoria }}",
+                    "rightValue": "status_przesylki",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "status_przesylki"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0b3bb920-6b45-4f85-b15f-514a155c1c3a",
+                    "leftValue": "={{ $json.output.kategoria }}",
+                    "rightValue": "reklamacja",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reklamacja"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5f337681-cdd6-495c-9fd7-32d2d6604d9c",
+                    "leftValue": "={{ $json.output.kategoria }}",
+                    "rightValue": "phishing_spam",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "phishing_spam"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "inne"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        -16
+      ],
+      "id": "772e7ab1-825f-4fc9-bb5f-cbf3d30975cf",
+      "name": "Switch"
+    },
+    {
+      "parameters": {},
+      "id": "9fe1ea42-e9ad-4a7b-b938-fca2294be373",
+      "name": "Do czlowieka (niska pewnosc)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        960,
+        -288
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "0591a71f-c664-4272-9a27-f546d73d761e",
+      "name": "Obsluga: status_przesylki",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        -256
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "32dd8ccb-8093-45cf-81af-148c1d3603dd",
+      "name": "Obsluga: reklamacja",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        -112
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "1466880e-039d-4fb6-b2cd-228549b45576",
+      "name": "Obsluga: phishing_spam",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        48
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "6dc0e384-e48e-4d84-a501-f45c2c69b858",
+      "name": "Obsluga: inne",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        336
+      ]
+    }
+  ],
+  "connections": {
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Do czlowieka (niska pewnosc)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Obsluga: status_przesylki",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obsluga: reklamacja",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obsluga: phishing_spam",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obsluga: inne",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": {
+    "node:Gmail Trigger": {
+      "Gmail Trigger": {
+        "lastTimeChecked": 1792013683
+      }
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {
+    "Gmail Trigger": [
+      {
+        "json": {
+          "id": "test-msg-1",
+          "threadId": "test-thread-1",
+          "From": "Jan Kowalski <jan@example.com>",
+          "To": "obsluga@example.com",
+          "Subject": "Gdzie jest moja przesyłka?",
+          "snippet": "Dzień dobry, zamówiłem towar tydzień temu, numer przesyłki 12347. Kiedy dotrze? Pozdrawiam, Jan",
+          "labelIds": [
+            "INBOX",
+            "UNREAD"
+          ]
+        }
+      }
+    ]
+  },
+  "versionId": "42a21baf-ba6c-493d-959c-7820d1af8db3",
+  "activeVersionId": "d2b92eeb-1881-46ea-8709-d8764d40405a",
+  "versionCounter": 56,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-14T21:24:11.531Z",
+      "createdAt": "2026-10-14T21:24:11.531Z",
+      "role": "workflow:owner",
+      "workflowId": "pZd7EmJNMarDhNgg",
+      "projectId": "uB3LdtwnYBt96Juy",
+      "project": {
+        "updatedAt": "2026-10-14T20:35:21.513Z",
+        "createdAt": "2026-10-14T20:32:23.122Z",
+        "id": "uB3LdtwnYBt96Juy",
+        "name": "Karol Wojtas <obsluga@example.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "2994ca79-89c4-4264-bd65-0d2e98f2b35d"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

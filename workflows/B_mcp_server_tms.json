@@ -1,0 +1,100 @@
+{
+  "updatedAt": "2026-10-14T21:40:01.142Z",
+  "createdAt": "2026-10-14T21:09:12.379Z",
+  "id": "y5tQa8DwLiZDYPhe",
+  "name": "Workflow B",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "tms"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2.1,
+      "position": [
+        96,
+        16
+      ],
+      "id": "f8f93471-002a-489b-9a16-f0e5b43fb380",
+      "name": "MCP Server Trigger",
+      "webhookId": "7d29f5da-ca87-4b5c-98ce-58531c9e54eb"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Sprawdza status przesyłki w systemie TMS. Użyj, gdy mail pyta o status, lokalizację lub termin dostawy przesyłki. Wejście: numer przesyłki (nr). Zwraca status i ETA.",
+        "url": "http://n8n:5678/webhook/tms/shipment",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "nr",
+              "value": "={{ $fromAI('nr', 'numer przesyłki, np. 12347', 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        240,
+        176
+      ],
+      "id": "481f2187-c9a6-499b-bee1-ca100077721a",
+      "name": "sprawdz_status_przesylki"
+    }
+  ],
+  "connections": {
+    "sprawdz_status_przesylki": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "1fd9d667-b2fc-421b-80c1-604785cdce74",
+  "activeVersionId": "1fd9d667-b2fc-421b-80c1-604785cdce74",
+  "versionCounter": 43,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-14T21:09:12.379Z",
+      "createdAt": "2026-10-14T21:09:12.379Z",
+      "role": "workflow:owner",
+      "workflowId": "y5tQa8DwLiZDYPhe",
+      "projectId": "uB3LdtwnYBt96Juy",
+      "project": {
+        "updatedAt": "2026-10-14T20:35:21.513Z",
+        "createdAt": "2026-10-14T20:32:23.122Z",
+        "id": "uB3LdtwnYBt96Juy",
+        "name": "Karol Wojtas <obsluga@example.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "2994ca79-89c4-4264-bd65-0d2e98f2b35d"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

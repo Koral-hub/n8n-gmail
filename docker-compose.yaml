@@ -1,0 +1,70 @@
+# n8n self-hosted: Postgres (baza n8n + Postgres Chat Memory) + Redis + worker (queue mode)
+# Start:  docker compose up -d      UI: http://localhost:5678
+# Bez queue mode: zakomentuj usługi redis i n8n-worker oraz zmienne EXECUTIONS_MODE / QUEUE_*.
+
+x-n8n-env: &n8n-env
+  DB_TYPE: postgresdb
+  DB_POSTGRESDB_HOST: postgres
+  DB_POSTGRESDB_PORT: 5432
+  DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
+  DB_POSTGRESDB_USER: ${POSTGRES_USER}
+  DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+  # Ten sam klucz na main i workerach, inaczej worker nie odszyfruje credentials
+  N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+  GENERIC_TIMEZONE: Europe/Warsaw
+  TZ: Europe/Warsaw
+  WEBHOOK_URL: http://localhost:5678/
+  N8N_RUNNERS_ENABLED: "true"
+  # --- queue mode ---
+  EXECUTIONS_MODE: queue
+  QUEUE_BULL_REDIS_HOST: redis
+  QUEUE_BULL_REDIS_PORT: 6379
+  # Ręczne uruchomienia z edytora też idą na workera (jak na produkcji)
+  OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: "true"
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment: *n8n-env
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  n8n-worker:
+    image: docker.n8n.io/n8nio/n8n
+    restart: unless-stopped
+    command: worker
+    environment: *n8n-env 
+    depends_on:
+      - n8n
+
+volumes:
+  pg_data:
+  n8n_data:
